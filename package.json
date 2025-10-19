@@ -1,0 +1,17 @@
+{
+  "name": "l7-live-traffic-pro",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0"
+  }
+}
