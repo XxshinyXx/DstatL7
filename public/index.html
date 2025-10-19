@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Live Traffic Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-3xl p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">🚀 Live Incoming Requests</h1>
+    <div class="bg-slate-900/70 rounded-2xl p-4 ring-1 ring-white/10 shadow-xl">
+      <canvas id="chart" height="140"></canvas>
+    </div>
+    <p class="text-center text-slate-400 text-sm mt-4">Shows real incoming requests per second (RPS)</p>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'Requests/sec', data: [], borderWidth: 2, tension: 0.3, borderColor: '#60a5fa', pointRadius: 0, fill: { target: 'origin', above: 'rgba(96,165,250,0.1)' } }] },
+      options: {
+        animation: false,
+        scales: {
+          x: { ticks: { color: '#94a3b8' } },
+          y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        },
+        plugins: { legend: { labels: { color: '#e2e8f0' } } }
+      }
+    });
+
+    const MAX = 120;
+    const es = new EventSource('/stats');
+    es.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      const time = new Date(d.t).toLocaleTimeString([], {hour12:false});
+      chart.data.labels.push(time);
+      chart.data.datasets[0].data.push(d.count);
+      if (chart.data.labels.length > MAX) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+      }
+      chart.update();
+    };
+  </script>
+</body>
+</html>
