@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: l7-live-traffic-pro
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /healthz
