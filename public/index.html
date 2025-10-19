@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang='en'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>L7 Live Traffic — Pro</title>
+<script src='https://cdn.tailwindcss.com'></script>
+<script src='https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'></script>
+<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' rel='stylesheet'>
+<style>body{font-family:Inter,system-ui,sans-serif}.bg-grid{background-image:radial-gradient(rgba(255,255,255,.05)1px,transparent 1px);background-size:16px 16px}</style>
+</head>
+<body class='bg-slate-950 text-slate-100 min-h-screen bg-grid'>
+<div class='max-w-5xl mx-auto p-6'>
+<header class='flex items-center justify-between mb-6'><h1 class='text-2xl md:text-3xl font-bold tracking-tight'>L7 Live Traffic</h1>
+<span id='statusDot' class='inline-flex items-center gap-2 text-sm text-slate-400'><span class='w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse'></span><span>connecting…</span></span></header>
+<div class='grid gap-4 grid-cols-2 md:grid-cols-3 mb-6'>
+<div class='rounded-2xl p-4 ring-1 ring-white/10 bg-slate-900/70 shadow-xl'><div class='text-xs uppercase text-slate-400'>Total Requests</div><div id='total' class='text-2xl font-bold mt-1'>—</div></div>
+<div class='rounded-2xl p-4 ring-1 ring-white/10 bg-slate-900/70 shadow-xl'><div class='text-xs uppercase text-slate-400'>Current RPS</div><div id='rps' class='text-2xl font-bold mt-1'>—</div></div>
+<div class='rounded-2xl p-4 ring-1 ring-white/10 bg-slate-900/70 shadow-xl'><div class='text-xs uppercase text-slate-400'>1‑Minute Avg</div><div id='avg' class='text-2xl font-bold mt-1'>—</div></div></div>
+<div class='rounded-3xl ring-1 ring-white/10 bg-slate-900/60 p-4 md:p-6 shadow-2xl relative overflow-hidden'><canvas id='chart' height='150'></canvas><div class='pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent'></div></div>
+<footer class='mt-6 text-xs text-slate-400'>Counts all incoming requests (excluding the live stream). Keep this page open to watch real-time spikes.</footer></div>
+<script>
+const totalEl=document.getElementById('total'),rpsEl=document.getElementById('rps'),avgEl=document.getElementById('avg'),statusDot=document.getElementById('statusDot');
+const ctx=document.getElementById('chart').getContext('2d'),g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,'rgba(99,102,241,.35)');g.addColorStop(1,'rgba(99,102,241,0)');
+const c=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Requests / sec',data:[],borderWidth:2,tension:.25,pointRadius:0,borderColor:'#818cf8',fill:!0,backgroundColor:g}]},
+options:{animation:{duration:0},responsive:!0,maintainAspectRatio:!1,scales:{x:{ticks:{color:'#94a3b8'},grid:{display:!1}},y:{beginAtZero:!0,ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,0.06)'}}},
+plugins:{legend:{labels:{color:'#e2e8f0'}},tooltip:{mode:'index',intersect:!1}},elements:{line:{capBezierPoints:!0}}}});
+const MAX=180;function add(t,v){const time=new Date(t).toLocaleTimeString([], {hour12:!1});c.data.labels.push(time);c.data.datasets[0].data.push(v);
+if(c.data.labels.length>MAX){c.data.labels.shift();c.data.datasets[0].data.shift();}c.update();}
+let es;function connect(){es=new EventSource('/live');statusDot.children[0].className='w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse';statusDot.children[1].textContent='connecting…';
+es.addEventListener('open',()=>{statusDot.children[0].className='w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';statusDot.children[1].textContent='live';});
+es.addEventListener('metrics',e=>{const d=JSON.parse(e.data);totalEl.textContent=d.total.toLocaleString();rpsEl.textContent=d.rps;avgEl.textContent=d.avg1m;add(d.t,d.rps);});
+es.onerror=()=>{statusDot.children[0].className='w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse';statusDot.children[1].textContent='reconnecting…';es.close();setTimeout(connect,1500);};}
+connect();
+</script></body></html>
